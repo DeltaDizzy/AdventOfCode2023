@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 Regex symbolMatch = new(@"[/#\-*$+&=%@]");
 Regex wordMatch = new(@"[0-9]+");
@@ -9,13 +8,11 @@ List<Symbol> symbols = [];
 IEnumerable<Symbol> eligibleSymbols = [];
 int width = 0;
 int height = 0;
-Stopwatch timer = new();
 
 void LoadInput() {
     string[] input = File.ReadAllLines(@"C:\Users\DeltaDizzy\Documents\DOTNET\Advent of Code\2023\Day3-GearRatios\input.txt");
     width = input[0].Length;
     height = input.Length;
-
     
     for (int i = 0; i < input.Length; i++)
     {   // for each line
@@ -34,7 +31,6 @@ void LoadInput() {
             symbols.Add(new Symbol(new Position(match.Index, i), match.Value));
         }
     }
-
 }
 
 bool IsAdjacent(Symbol symbol, Word word) {
@@ -60,11 +56,8 @@ void Part1() {
     {
         eligibleSymbols = symbols.Where(symbol => Math.Abs(symbol.Position.Y - word.StartPosition.Y) <= 1);
         Console.WriteLine($"Checking adjacency for word at {word.StartPosition}, {eligibleSymbols.Count()} symbols");
-        timer.Start();
         foreach (Symbol symbol in symbols)
-        {
-            
-            
+        {   
             if (IsAdjacent(symbol, word))
             {
                 if (!partNumbers.Contains(word))
@@ -73,8 +66,6 @@ void Part1() {
                 }
             }
         }
-        Console.WriteLine($"Took {timer.ElapsedMilliseconds}ms");
-        timer.Restart();
     }
     Console.WriteLine(partNumbers.Sum(word => word.Text));
     foreach (Word word in allNumbers.Except(partNumbers))
