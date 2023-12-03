@@ -83,7 +83,29 @@ void Part1() {
     }
 }
 
-Part1();
+void Part2() {
+    LoadInput();
+    List<int> gearRatios = [];
+    foreach (Symbol symbol in symbols.Where(s => s.Text == "*"))
+    {
+        List<Word> adjacentWords = [];
+        var eligibleWords = allNumbers.Where(word => Math.Abs(word.StartPosition.Y - symbol.Position.Y) <= 1);
+        foreach (Word word in eligibleWords)
+        {
+            if (IsAdjacent(symbol, word))
+            {
+                adjacentWords.Add(word);
+            }
+        }
+        if (adjacentWords.Count == 2) {
+            // gearWords is ACTUALLY gear words, so find the ratio and put it in the list
+            gearRatios.Add(adjacentWords[0].Text * adjacentWords[1].Text);
+        }
+    }
+    Console.WriteLine(gearRatios.Sum());
+}
+
+Part2();
 
 record Position(int X, int Y);
 
