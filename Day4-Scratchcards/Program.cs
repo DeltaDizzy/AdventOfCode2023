@@ -2,78 +2,84 @@
 using System.Text.RegularExpressions;
 
 Regex numberMatch = new Regex(@"(\d+)");
-List<Card> cards = [];
+// card, # of instances
+Dictionary<int, IEnumerable<int>> originalCards = [];
+List<int> cardInstances = [];
 Stopwatch watch = new Stopwatch();
 
 void LoadInput() {
     string[] lines = File.ReadAllLines(@"C:\Users\DeltaDizzy\Documents\DOTNET\Advent of Code\2023\Day4-Scratchcards\input.txt");
     foreach (string line in lines)
     {
-        var matches = numberMatch.Matches(line);
-        var cardNumbers = matches.Skip(1).Take(10).Select(match => int.Parse(match.Value));
-        var winningNumbers = matches.Skip(10).Select(match => int.Parse(match.Value));
-        cards.Add(new Card(int.Parse(matches.Take(1).FirstOrDefault().Value), cardNumbers, winningNumbers));
+        if (lines.Length <= 7)
+        {
+            var matches = numberMatch.Matches(line);
+            var cardNumbers = matches.Skip(1).Take(5).Select(match => int.Parse(match.Value));
+            var winningNumbers = matches.Skip(6).Select(match => int.Parse(match.Value));
+            int cardId = int.Parse(matches.Take(1).FirstOrDefault().Value);
+            int numberMatched = winningNumbers.Intersect(cardNumbers).Count();
+            var cardsToGenerate = Enumerable.Range(Math.Clamp(cardId + 1, 1, 6), numberMatched).Distinct();
+            originalCards.Add(cardId, cardsToGenerate);
+            cardInstances.Add(cardId);
+        } else {
+            var matches = numberMatch.Matches(line);
+            var cardNumbers = matches.Skip(1).Take(10).Select(match => int.Parse(match.Value));
+            var winningNumbers = matches.Skip(11).Select(match => int.Parse(match.Value));
+            int cardId = int.Parse(matches.Take(1).FirstOrDefault().Value);
+            int numberMatched = winningNumbers.Intersect(cardNumbers).Count();
+            var cardsToGenerate = Enumerable.Range(Math.Clamp(cardId + 1, 1, 196), numberMatched).Distinct();
+            originalCards.Add(cardId, cardsToGenerate);
+            cardInstances.Add(cardId);
+        }
     }
 }
 
-LoadInput();
-int maxNumber = 0;
-for (int i = 0; i < cards.Count; i++)
-{
-    watch.Start();
-    Card card = cards[i];
-    int numbersWon = GetNumberMatches(card);
-    if (numbersWon is 0) continue;
-    // get next [numbersWon] cards
-    // get card numbers to copy
-    var numbersToCopy = Enumerable.Range(card.Number + 1, numbersWon).ToList();
-    maxNumber = Math.Max(maxNumber, numbersToCopy.Max());
-    // get cards to copy
-    List<Card> cardsToCopy = [];
-    foreach (int numberToCopy in numbersToCopy)
+void CalculateCardInstancesBruteForce() {
+// dict of card numbers and card numbers they generate
+// list of card numbers
+// use dict to fill out list
+//  to do this, set all spots in list to 1
+//  for each item in the list, addrange [generated card numbers]
+// sum list
+
+    
+    for (int i = 0; i < cardInstances.Count; i++)
     {
-        Card? cardToCopy = cards.Find(c => c.Number == numberToCopy);
-        if (cardToCopy is not null)
-        {
-            cardsToCopy.Add(cardToCopy);
-        } else {
-            Console.WriteLine($"i is {i}");
-            Console.WriteLine($"numberToCopy is {numberToCopy}");
-            throw new ArgumentNullException("cardToCopy");
-        }
-        
-    }
-    // copy cards into main list
-    cards.AddRange(cardsToCopy);
-    //resort list
-    try
-    {
-        cards = cards.OrderBy(c => c.Number).ToList();
-    }
-    catch (NullReferenceException nre)
-    {
-        Console.WriteLine(nre.Message);
-        Console.WriteLine(nre.StackTrace);
-        Console.WriteLine(nre.InnerException);
-        Console.WriteLine($"i is {i}");
+        watch.Start();
+        cardInstances.AddRange(originalCards[cardInstances[i]]);
+        cardInstances = cardInstances.OrderBy(number => number).ToList();
+        Console.WriteLine($"Processing number {cardInstances[i]} in {watch.ElapsedMilliseconds}ms");
+        watch.Stop();
+        watch.Reset();
     }
     watch.Stop();
-    Console.WriteLine($"Card {card.Number} at index {i} out of {cards.Count} took {watch.ElapsedMilliseconds}ms");
-    Console.WriteLine($"The largest card number copied so far is {maxNumber}");
-    watch.Reset();
-}
-Console.WriteLine($"We have {cards.Count} cards.");
-Console.WriteLine($"Numbers of each Card Number:");
-foreach (Card card in cards.DistinctBy(c => c.Number))
-{
-    Console.WriteLine($"{card.Number}: {cards.Where(c => c.Number == card.Number).Count()}");
+    // get sum of card numbers
+    var cardTallies =  cardInstances.GroupBy(num => num).Select(group => group.Count());
+    Console.WriteLine($"Total Number of Cards: {cardTallies.Sum()}");
+    Console.WriteLine($"Ran in {watch.ElapsedMilliseconds}ms");
 }
 
-int GetNumberMatches(Card card) {
-    List<int> matches = card.CardNumbers.Intersect(card.WinningNumbers).ToList();
-    //Console.WriteLine($"Card {card.Number} Matching Numbers:");
-    //matches.ForEach(Console.WriteLine);
-    return matches.Count();
+void CalculateCardInstances() {
+    // dict of card numbers and card numbers they generate
+    // list of numbers of instances of cards
+    // use dict to fill out list
+    //  to do this, set all spots in list to 1
+    cardInstances = Enumerable.Repeat(1, originalCards.Count).ToList();
+    //  for each item in the list, add 1 * (num of cards with current id) to each generated slot
+    // get cards to generate copies for
+    foreach (var item in originalCards)
+    {
+        var cardsToGenerate = item.Value;
+        foreach (int card in cardsToGenerate)
+        {
+            // card is 2 so slot is 1
+            cardInstances[card-1] += 1;
+        }
+    }
+    // get sum of card numbers
+    Console.WriteLine($"Total Number of Cards: {cardInstances.Sum()}");
+    Console.WriteLine($"Ran in {watch.ElapsedMilliseconds}ms");
 }
-
-record Card(int Number, IEnumerable<int> CardNumbers, IEnumerable<int> WinningNumbers);
+LoadInput();
+watch.Start();
+CalculateCardInstances();
